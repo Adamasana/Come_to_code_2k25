@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex; /* Ajouté */
+            justify-content: center; /* Ajouté */
+            align-items: center; /* Ajouté */
+            height: 100vh; /* Ajouté */
+            margin: 0;
+            padding: 0;
+        }
+
+        .registration-form {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #fff;
+            box-shadow: 0px 0px 20px 0px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+
+        .inscription_titre {
+            color: #333;
+            margin-top: 0;
+        }
+
+        .registration-form form {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .registration-form label {
+            margin-top: 10px;
+            text-align: left;
+            color: #333;
+        }
+
+        .registration-form input[type="text"], .registration-form input[type="email"], .registration-form input[type="password"] {
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .registration-form input[type="submit"] {
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #333;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+        }
+
+        .registration-form input[type="submit"]:hover {
+            background-color: #1a1919;
+        }
+
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
+        ul{
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="registration-form">
+        <h2 class="inscription_titre">Connexion</h2>
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    {% if message.tags == 'error' %}
+                        <li style="list-style:none; text-align: center; color: red;">{{ message }}</li>
+                    {% elif message.tags == 'success' %}
+                        <li style="list-style:none; text-align: center; color: green;">{{ message }}</li>
+                    {% else %}
+                        <li style="list-style:none; text-align: center;">{{ message }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <label for="username">Nom d'utilisateur :</label>
+            <input type="text" id="username" name="username" required>
+    
+            <label for="password">Mot de passe :</label>
+            <input type="password" id="password" name="password" required>
+    
+            <input type="submit" value="Se Connecter">
+        </form>
+    </div>
+</body>
+</html>

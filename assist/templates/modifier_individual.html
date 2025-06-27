@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modifier Fiche Individuelle</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <link href="{% static 'css/style.css' %}" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            padding: 20px;
+            background: #f0f2f5;
+            color: #222;
+        }
+        form {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #850606;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        input[type="text"], input[type="date"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+        textarea {
+            resize: vertical;
+        }
+        button {
+            background-color: #850606;
+            color: white;
+            padding: 12px 30px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            display: block;
+            margin: 0 auto;
+        }
+        button:hover {
+            background-color: #a61717;
+        }
+        .messages {
+            max-width: 900px;
+            margin: 10px auto;
+            text-align: center;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Modifier la fiche individuelle</h1>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="emergency_contact_name">Contact d'urgence (nom):</label>
+            <input type="text" id="emergency_contact_name" name="emergency_contact_name" value="{{ individual.emergency_contact_name }}" required />
+        </div>
+
+        <div class="form-group">
+            <label for="emergency_contact_phone">Contact d'urgence (téléphone):</label>
+            <input type="text" id="emergency_contact_phone" name="emergency_contact_phone" value="{{ individual.emergency_contact_phone }}" required />
+        </div>
+
+        <div class="form-group">
+            <label for="insurance_info">Informations d'assurance:</label>
+            <textarea id="insurance_info" name="insurance_info" rows="2">{{ individual.insurance_info }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="critical_allergies">Allergies critiques:</label>
+            <textarea id="critical_allergies" name="critical_allergies" rows="2">{{ individual.critical_allergies }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="current_medications">Médicaments actuels:</label>
+            <textarea id="current_medications" name="current_medications" rows="2">{{ individual.current_medications }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="attending_physician">Médecin traitant:</label>
+            <input type="text" id="attending_physician" name="attending_physician" value="{{ individual.attending_physician }}" />
+        </div>
+
+        <div class="form-group">
+            <label for="physician_phone">Téléphone du médecin:</label>
+            <input type="text" id="physician_phone" name="physician_phone" value="{{ individual.physician_phone }}" />
+        </div>
+
+        <div class="form-group">
+            <label for="medical_conditions">Conditions médicales:</label>
+            <textarea id="medical_conditions" name="medical_conditions" rows="2">{{ individual.medical_conditions }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="past_surgeries">Chirurgies passées:</label>
+            <textarea id="past_surgeries" name="past_surgeries" rows="2">{{ individual.past_surgeries }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="medical_history">Historique médical détaillé:</label>
+            <textarea id="medical_history" name="medical_history" rows="3">{{ individual.medical_history }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="additional_emergency_contacts">Contacts d'urgence supplémentaires:</label>
+            <textarea id="additional_emergency_contacts" name="additional_emergency_contacts" rows="4">{{ individual.additional_emergency_contacts }}</textarea>
+        </div>
+
+        <button type="submit">Mettre à jour</button>
+    </form>
+</body>
+</html>

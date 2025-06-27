@@ -1,0 +1,221 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Fiche Individuelle</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to right, #f8f9fa, #e0e7ee);
+            padding: 40px 20px;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            color: #850606;
+            margin-bottom: 50px;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        h1 img {
+            width: 80px;
+            height: 80px;
+        }
+
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section h3 {
+            font-size: 22px;
+            margin-bottom: 25px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ccc;
+            color: #444;
+        }
+
+        .info-group {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .info-box {
+            width: 44%;
+            background: #f9f9f9;
+            padding: 18px 22px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            transition: transform 0.2s ease;
+        }
+
+        .info-box:hover {
+            transform: translateY(-3px);
+        }
+
+        .info-box strong {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .info-box span.blood {
+            font-size: 28px;
+            font-weight: bold;
+            color: #850606;
+        }
+
+        .qr {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .qr img {
+            width: 160px;
+            height: 160px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .qr a {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 20px;
+            background: #28a745;
+            color: white;
+            font-size: 14px;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+
+        .qr a:hover {
+            background: #218838;
+        }
+
+        .no-qr {
+            color: #888;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .info-box {
+                width: 100%;
+            }
+
+            h1 {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            h1 img {
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>
+        <img src="{% static 'images/logo.png' %}" alt="Logo">
+        Fiche d'identification médicale
+    </h1>
+
+    <div class="section">
+        <h3>Identité</h3>
+        <div class="info-group">
+            <div class="info-box"><strong>Nom</strong> {{ individual.last_name }}</div>
+            <div class="info-box"><strong>Prénom</strong> {{ individual.first_name }}</div>
+            <div class="info-box"><strong>CNIB</strong> {{ individual.cnib }}</div>
+            <div class="info-box"><strong>Date de naissance</strong> {{ individual.date_of_birth }}</div>
+            <div class="info-box"><strong>Sexe</strong> {{ individual.get_gender_display }}</div>
+            <div class="info-box"><strong>Groupe sanguin</strong> <span class="blood">{{ individual.blood_type }}</span></div>
+            <div class="info-box"><strong>Âge</strong> {{ individual.age }} ans</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Contact d'urgence</h3>
+        <div class="info-group">
+            <div class="info-box"><strong>Nom</strong> {{ individual.emergency_contact_name }}</div>
+            <div class="info-box"><strong>Téléphone</strong> {{ individual.emergency_contact_phone }}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Allergies & Médicaments</h3>
+        <div class="info-group">
+            <div class="info-box"><strong>Allergies critiques</strong> {{ individual.critical_allergies|default:"-" }}</div>
+            <div class="info-box"><strong>Médicaments actuels</strong> {{ individual.current_medications|default:"-" }}</div>
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+        <div class="section">
+            <h3>Antécédents médicaux</h3>
+            <div class="info-group">
+                <div class="info-box"><strong>Conditions médicales</strong> {{ individual.medical_conditions|default:"-" }}</div>
+                <div class="info-box"><strong>Chirurgies passées</strong> {{ individual.past_surgeries|default:"-" }}</div>
+                <div class="info-box"><strong>Historique médical</strong> {{ individual.medical_history|default:"-" }}</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Suivi médical</h3>
+            <div class="info-group">
+                <div class="info-box"><strong>Médecin traitant</strong> {{ individual.attending_physician|default:"-" }}</div>
+                <div class="info-box"><strong>Téléphone du médecin</strong> {{ individual.physician_phone|default:"-" }}</div>
+                <div class="info-box"><strong>Assurance</strong> {{ individual.insurance_info|default:"-" }}</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Contacts d'urgence supplémentaires</h3>
+            <div class="info-box" style="width: 100%;">
+                {{ individual.additional_emergency_contacts|default:"-" }}
+            </div>
+        </div>
+    {% else %}
+        <div class="section text-center">
+            <p style="color: #888; font-style: italic;">
+                Certaines informations médicales sensibles sont masquées.<br>
+                <a href="{% url 'connect_user' %}" style="color: #007bff;">Connectez-vous</a> pour y accéder.
+            </p>
+        </div>
+    {% endif %}
+
+    <div class="qr">
+        {% if individual.qr_code %}
+            <img src="{{ individual.qr_code.url }}" alt="QR Code">
+            <br>
+            <a href="{{ individual.qr_code.url }}" download><i class="fas fa-download"></i> Télécharger le QR Code</a>
+        {% else %}
+            <p class="no-qr">QR Code non disponible</p>
+        {% endif %}
+    </div>
+</div>
+</body>
+</html>
