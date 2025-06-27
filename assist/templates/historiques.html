@@ -138,11 +138,11 @@
     <div class="header row px-xl-4">
         <div>
             
-            <h1 class="font-weight-semi-bold text-uppercase">Ma Fiche</h1>
+            <h1 class="font-weight-semi-bold text-uppercase">Logs d'accès</h1>
             
         </div>
         <div class="buttons">
-            <button class="btn btn-primary" onclick="window.location.href='{% url 'historique_individual' individual.unique_id %}'">Logs d'accès</button>
+            <button class="btn btn-primary" onclick="window.location.href='{% url 'trouver_individual' individual.unique_id %}'">Fiche</button>
             <button class="btn btn-primary" onclick="window.location.href='{% url 'index' %}'">Quitter</button>
         </div>
     </div>
@@ -174,36 +174,27 @@
                                 <table class="common-style table text-center mb-0">
                                     <thead>
                                         <tr>
-                                            <th>CNIB</th>
-                                            <th>Nom</th>
-                                            <th>Prénom</th>
-                                            <th>Sexe</th>
-                                            <th>Âge</th>
-                                            <th>Contact d'urgence</th>
-                                            <th>Téléphone d'urgence</th>
-                                            <th>Modifier</th>
+                                            <th>Agent</th>
+                                            <th>Type</th>
+                                            <th>Adresse IP</th>
+                                            <th>User-Agent</th>
+                                            <th>Date</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr class="user-row">
-                                            <td style="color: #00bfff; font-weight: bold; cursor: pointer;" onclick="window.location.href='{% url 'individual_public' individual.unique_id %}'">{{ individual.cnib }}</td>
-                                            <td>{{ individual.last_name }}</td>
-                                            <td class="first-name">{{ individual.first_name }}</td>
-                                            <td>{{ individual.get_gender_display }}</td>
-                                            <td>{{ individual.age }}</td>
-                                            <td>{{ individual.emergency_contact_name }}</td>
-                                            <td>{{ individual.emergency_contact_phone }}</td>
-                                            <td>
-                                                <a href="{% url 'modifier_individual' individual.unique_id %}" class="btn btn-sm btn-primary">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                            </td>
-                                            
+                                        {% for log in logs %}
+                                        <tr>
+                                            <td>{{ log.accessed_by.get_full_name|default:"Anonyme" }}</td>
+                                            <td>{{ log.get_access_type_display }}</td>
+                                            <td>{{ log.ip_address|default:"-" }}</td>
+                                            <td>{{ log.user_agent|truncatechars:50 }}</td>
+                                            <td>{{ log.accessed_at|date:"d/m/Y H:i" }}</td>
                                         </tr>
-                                        
-
-
-                                        <!-- Modal de confirmation de suppression -->
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5">Aucun log disponible pour cet individu.</td>
+                                        </tr>
+                                        {% endfor %}
                                     </tbody>
                                 </table>                                
                             </div>

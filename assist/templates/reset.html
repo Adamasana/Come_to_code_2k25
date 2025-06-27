@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trouver</title>
+    <title>Reset</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -79,7 +79,7 @@
 </head>
 <body>
     <div class="registration-form">
-        <h2 class="inscription_titre">Trouver</h2>
+        <h2 class="inscription_titre">Reset</h2>
         {% if messages %}
             <ul class="messages">
                 {% for message in messages %}
@@ -103,20 +103,14 @@
             <label for="cnib">CNIB :</label>
             <input type="text" id="cnib" name="cnib" required>
         
-            <label for="password">Key :</label>
-            <input type="password" id="password" name="password" required>
+            <label for="email">Email :</label>
+            <input type="email" id="email" name="email" required>
         
-            <input type="submit" value="Trouver">
+            <input type="submit" value="Reset">
 
             <div style="text-align: center; margin-top: 20px;">
-                <a href="{% url 'connect_user' %}" style="color: #850606; text-decoration: none; font-weight: bold;">
-                    Se connecter en tant qu’agent
-                </a>
-            </div>
-
-            <div style="text-align: center; margin-top: 20px;">
-                <a href="{% url 'reset_key' %}" style="color: #850606; text-decoration: none; font-weight: bold;">
-                    Recuperer Cle d'acces
+                <a href="{% url 'index' %}" style="color: #850606; text-decoration: none; font-weight: bold;">
+                    Retour
                 </a>
             </div>
         </form>

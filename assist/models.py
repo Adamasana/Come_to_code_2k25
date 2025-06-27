@@ -64,6 +64,7 @@ class Individual(models.Model):
     last_name = models.CharField(max_length=100, verbose_name="Nom")
     cnib = models.CharField(max_length=15, verbose_name="Cnib")
     key = models.CharField(max_length=10000, verbose_name="Key")  # à hasher manuellement
+    email = models.EmailField(null=True, blank=True,)
     date_of_birth = models.DateField(verbose_name="Date de naissance")
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name="Sexe")
     blood_type = models.CharField(max_length=3, choices=BLOOD_TYPE_CHOICES, verbose_name="Groupe sanguin")

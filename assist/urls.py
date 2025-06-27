@@ -3,6 +3,9 @@ from assist.views import *
 
 urlpatterns = [
     path('', index, name="index"),
+    path('historique/<uuid:uuid>/', historique_individual, name='historique_individual'),
+    path('fiche/<uuid:uuid>/', trouver_individual, name='trouver_individual'),
+    path('reset/', reset_key, name='reset_key'),
     path('connect_user', connect_user, name="connect_user"),
     path('add_user', add_user, name="add_user"),
     path('logout', deconnexion, name="logout"),

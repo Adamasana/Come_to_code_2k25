@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
+from django.core.mail import send_mail
 
 # Create your views here.
 def index(request):
@@ -27,6 +28,17 @@ def index(request):
             return render(request, 'index.html', {'error': "Identifiants incorrects"})
 
     return render(request, "index.html")
+
+
+def historique_individual(request, uuid):
+    individual = get_object_or_404(Individual, unique_id=uuid)
+    logs = individual.access_logs.select_related('accessed_by').all()
+    return render(request, 'historiques.html', {'individual': individual, 'logs': logs})
+
+
+def trouver_individual(request, uuid):
+    individual = get_object_or_404(Individual, unique_id=uuid)
+    return render(request, 'trouver.html', {'individual': individual})
 
 
 def deconnexion(request):
@@ -179,8 +191,41 @@ def individual_public_view(request, unique_id):
 @login_required(login_url='connect_user')
 def delete_individual(request, unique_id):
     individual = get_object_or_404(Individual, unique_id=unique_id)
-    individual.delete()
-    messages.success(request, "Fiche supprimée avec succès.")
+
+    email = individual.email  # On garde l’e-mail avant suppression
+    full_name = individual.full_name
+
+    try:
+        individual.delete()
+
+        if email:
+            protocol = "https" if request.is_secure() else "http"
+            domain = request.get_host()
+
+            message = (
+                f"Bonjour {full_name},\n\n"
+                "Nous vous informons que votre fiche médicale personnelle a été supprimée de notre système.\n"
+                "Si vous n'êtes pas à l’origine de cette suppression ou si vous avez des préoccupations, "
+                "nous vous recommandons de nous contacter immédiatement.\n\n"
+                "Cordialement,\n"
+                "L’équipe de gestion des dossiers médicaux."
+            )
+
+            send_mail(
+                subject="Suppression de votre fiche médicale",
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+
+            messages.success(request, f"Fiche supprimée avec succès et notification envoyée à {email}.")
+        else:
+            messages.success(request, "Fiche supprimée avec succès.")
+
+    except Exception as e:
+        messages.warning(request, f"Fiche supprimée, mais l’e-mail n’a pas pu être envoyé : {e}")
+
     return redirect('accueil')
 
 
@@ -189,6 +234,9 @@ from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from .models import Individual
 from django.contrib.auth.decorators import login_required
+
+from django.core.mail import EmailMessage
+from django.core.files.base import ContentFile
 
 @login_required(login_url='connect_user')
 def create_individual(request):
@@ -199,6 +247,7 @@ def create_individual(request):
             first_name=data.get('first_name'),
             last_name=data.get('last_name'),
             cnib=data.get('cnib'),
+            email=data.get('email'),
             key=make_password(data.get('key')),  # Hachage de la clé
             date_of_birth=data.get('date_of_birth'),
             gender=data.get('gender'),
@@ -218,11 +267,58 @@ def create_individual(request):
         )
         individual.generate_qr_code(request)
         individual.save()
+
+        # Envoi de mail avec pièce jointe
+        if individual.email:
+            try:
+                # Lire le contenu du QR code généré
+                qr_content = individual.qr_code.read()
+
+                # Générer le lien de consultation
+                protocol = "https" if request.is_secure() else "http"
+                domain = request.get_host()
+                public_url = f"{protocol}://{domain}{individual.get_public_url()}"
+
+                # Contenu HTML de l'e-mail
+                html_content = format_html(
+                    """
+                    <p>Bonjour <strong>{first_name}</strong>,</p>
+                    <p>Votre fiche médicale a été créée avec succès.</p>
+                    <p>Vous pouvez la consulter ici : <br>
+                    <a href="{url}" style="color:#5fbff2;">{url}</a></p>
+                    <p>Vous trouverez également en pièce jointe votre code QR à conserver soigneusement.</p>
+                    <p>Cordialement,<br><em>L’équipe médicale</em>.</p>
+                    """,
+                    first_name=individual.first_name,
+                    url=public_url
+                )
+
+                # Création de l'e-mail
+                email = EmailMessage(
+                    subject="Création de votre fiche médicale",
+                    body=html_content,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[individual.email]
+                )
+                email.content_subtype = "html"  # Précise que le contenu est HTML
+
+                # Joindre le QR code
+                email.attach(f'qr_{individual.unique_id}.png', qr_content, 'image/png')
+
+                # Envoi
+                email.send()
+                messages.success(request, "Fiche créée et e-mail envoyé avec succès.")
+            except Exception as e:
+                messages.warning(request, f"Fiche créée mais l'e-mail n’a pas pu être envoyé : {e}")
+
         messages.success(request, "Individu créé avec succès.")
         return redirect('accueil')
     
     return render(request, 'add_induvidual.html')
 
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
+from django.utils.html import format_html
 
 def modifier_individual(request, unique_id):
     individual = get_object_or_404(Individual, unique_id=unique_id)
@@ -245,11 +341,47 @@ def modifier_individual(request, unique_id):
         individual.additional_emergency_contacts = request.POST.get('additional_emergency_contacts', individual.additional_emergency_contacts)
         
         individual.save()
-        messages.success(request, "Fiche mise à jour avec succès.")
-        if request.user.is_authenticated:
-            return redirect('accueil')
-        else:
-            return redirect('/')
+        try:
+            if individual.email:
+                protocol = "https" if request.is_secure() else "http"
+                domain = request.get_host()
+                public_url = f"{protocol}://{domain}{individual.get_public_url()}"
+
+                subject = "Mise à jour de votre fiche médicale"
+                from_email = settings.DEFAULT_FROM_EMAIL
+                to = [individual.email]
+
+                text_content = (
+                    f"Bonjour {individual.full_name},\n\n"
+                    "Nous vous informons que votre fiche médicale personnelle a été mise à jour dans notre système.\n"
+                    f"Consultez votre fiche ici : {public_url}\n\n"
+                    "Si vous n’êtes pas à l’origine de cette modification, contactez-nous immédiatement.\n\n"
+                    "Cordialement,\nL’équipe de gestion des dossiers médicaux."
+                )
+
+                html_content = format_html(
+                    """
+                    <p>Bonjour <strong>{name}</strong>,</p>
+                    <p>Nous vous informons que votre fiche médicale personnelle a été mise à jour dans notre système.</p>
+                    <p>Vous pouvez la consulter en toute sécurité en cliquant ici :<br>
+                    <a href="{url}" style="color: #5fbff2;">{url}</a></p>
+                    <p>Si vous n’êtes pas à l’origine de cette modification ou si vous avez des doutes,<br>
+                    merci de nous contacter immédiatement afin de sécuriser vos informations.</p>
+                    <p>Cordialement,<br><em>L’équipe de gestion des dossiers médicaux.</em></p>
+                    """,
+                    name=individual.full_name,
+                    url=public_url,
+                )
+
+                email = EmailMultiAlternatives(subject, text_content, from_email, to)
+                email.attach_alternative(html_content, "text/html")
+                email.send()
+
+                messages.success(request, "Fiche modifiée et e-mail envoyé avec succès.")
+        except Exception as e:
+            messages.error(request, f"Fiche modifiée, mais l’e-mail n’a pas pu être envoyé : {e}")
+        
+        return redirect('accueil') if request.user.is_authenticated else redirect('/')
 
     context = {
         'individual': individual,
@@ -257,3 +389,51 @@ def modifier_individual(request, unique_id):
         'genders': genders,
     }
     return render(request, 'modifier_individual.html', context)
+
+import random
+import string
+
+def reset_key(request):
+    if request.method == 'POST':
+        cnib = request.POST.get('cnib')
+        email = request.POST.get('email')
+
+        try:
+            individual = Individual.objects.get(cnib=cnib, email=email)
+
+            # Générer un nouveau mot de passe aléatoire
+            new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+
+            # Hacher et enregistrer le nouveau mot de passe
+            individual.key = make_password(new_password)
+            individual.save()
+
+            # Envoyer le mail professionnel
+            subject = "Réinitialisation de votre clé d’accès"
+            message = (
+                f"Bonjour {individual.full_name},\n\n"
+                "Une demande de réinitialisation de votre clé d’accès a été traitée avec succès.\n"
+                f"Voici votre nouvelle clé d’accès confidentielle : {new_password}\n\n"
+                "Nous vous conseillons de la conserver en lieu sûr et de la modifier dès que possible.\n\n"
+                "Si vous n’êtes pas à l’origine de cette demande, merci de nous contacter immédiatement.\n\n"
+                "Cordialement,\n"
+                "L’équipe de gestion des fiches médicales."
+            )
+
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False
+            )
+
+            messages.success(request, "Une nouvelle clé a été envoyée sur votre adresse e-mail.")
+            return redirect('index')
+
+        except Individual.DoesNotExist:
+            return render(request, 'reset.html', {'error': "Aucune fiche trouvée avec ces informations."})
+        except Exception as e:
+            return render(request, 'reset.html', {'error': f"Erreur lors de l’envoi de l’e-mail : {e}"})
+
+    return render(request, 'reset.html')
