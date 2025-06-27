@@ -125,22 +125,48 @@ class Individual(models.Model):
         return f"{protocol}://{host}{self.get_public_url()}"
 
     def generate_qr_code(self, request):
-        """Génère le QR code avec l'URL publique complète (incluant le domaine)"""
+        """Génère le QR code avec l'URL publique complète et logo au centre"""
+        from PIL import Image
+
         protocol = "https" if request.is_secure() else "http"
         host = request.get_host()
         qr_data = f"{protocol}://{host}{self.get_public_url()}"
 
+        # Créer le QR code avec correction d'erreur élevée
         qr = qrcode.QRCode(
             version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,  # Changé pour supporter le logo
             box_size=10,
             border=4,
         )
         qr.add_data(qr_data)
         qr.make(fit=True)
 
-        img = qr.make_image(fill_color="black", back_color="white")
+        # Générer l'image QR
+        img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
 
+        # Ajouter le logo (remplacez le chemin par celui de votre logo)
+        logo_path = "logo.png"  # CHANGEZ CE CHEMIN
+        try:
+            logo = Image.open(logo_path)
+
+            # Redimensionner le logo (1/5 de la taille du QR code)
+            qr_width, qr_height = img.size
+            logo_size = min(qr_width, qr_height) // 3
+            logo = logo.resize((logo_size, logo_size), Image.Resampling.LANCZOS)
+
+            # Position centrale
+            logo_pos = ((qr_width - logo_size) // 2, (qr_height - logo_size) // 2)
+
+            # Coller le logo
+            if logo.mode == 'RGBA':
+                img.paste(logo, logo_pos, logo)
+            else:
+                img.paste(logo, logo_pos)
+        except:
+            pass  # Continue sans logo si erreur
+
+        # Sauvegarder
         buffer = BytesIO()
         img.save(buffer, format='PNG')
         buffer.seek(0)
