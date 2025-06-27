@@ -200,15 +200,6 @@
             </div>
         </div>
 
-        <div class="qr">
-            {% if individual.qr_code %}
-                <img src="{{ individual.qr_code.url }}" alt="QR Code">
-                <br>
-                <a href="{{ individual.qr_code.url }}" download><i class="fas fa-download"></i> Télécharger le QR Code</a>
-            {% else %}
-                <p class="no-qr">QR Code non disponible</p>
-            {% endif %}
-        </div>
     {% else %}
         <div class="section text-center">
             <p style="color: #888; font-style: italic;">
