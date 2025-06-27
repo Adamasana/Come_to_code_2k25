@@ -8,6 +8,8 @@ from PIL import Image
 import uuid
 import qrcode
 from datetime import date
+import os
+from django.conf import settings
 # Create your models here.
 
 class Profile(models.Model):
@@ -146,25 +148,22 @@ class Individual(models.Model):
         img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
 
         # Ajouter le logo (remplacez le chemin par celui de votre logo)
-        logo_path = "logo.png"  # CHANGEZ CE CHEMIN
-        try:
-            logo = Image.open(logo_path)
+        logo_path = os.path.join(settings.MEDIA_ROOT, 'logo.png')
+        logo = Image.open(logo_path)
 
-            # Redimensionner le logo (1/5 de la taille du QR code)
-            qr_width, qr_height = img.size
-            logo_size = min(qr_width, qr_height) // 5
-            logo = logo.resize((logo_size, logo_size), Image.Resampling.LANCZOS)
+        # Redimensionner le logo (1/5 de la taille du QR code)
+        qr_width, qr_height = img.size
+        logo_size = min(qr_width, qr_height) // 3
+        logo = logo.resize((logo_size, logo_size), Image.Resampling.LANCZOS)
 
-            # Position centrale
-            logo_pos = ((qr_width - logo_size) // 2, (qr_height - logo_size) // 2)
+        # Position centrale
+        logo_pos = ((qr_width - logo_size) // 2, (qr_height - logo_size) // 2)
 
-            # Coller le logo
-            if logo.mode == 'RGBA':
-                img.paste(logo, logo_pos, logo)
-            else:
-                img.paste(logo, logo_pos)
-        except:
-            pass  # Continue sans logo si erreur
+        # Coller le logo
+        if logo.mode == 'RGBA':
+            img.paste(logo, logo_pos, logo)
+        else:
+            img.paste(logo, logo_pos)
 
         # Sauvegarder
         buffer = BytesIO()
