@@ -16,4 +16,5 @@ urlpatterns = [
     path('delete/<uuid:unique_id>/', delete_individual, name='delete_individual'),
     path('update_user/<int:user_id>/', update_user, name='update_user'),
     path('modifier/<uuid:unique_id>/', modifier_individual, name='modifier_individual'),
+    path("scan", scanner_qr, name="scan"),
 ]

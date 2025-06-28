@@ -7,6 +7,18 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
 from django.core.mail import send_mail
+from functools import wraps
+
+def superadmin_required(view_func):
+    @wraps(view_func)
+    @login_required
+    def _wrapped_view(request, *args, **kwargs):
+        if request.user.profile.is_admin:
+            return view_func(request, *args, **kwargs)
+        else:
+            messages.error(request, "Non autorisé")
+            return redirect('index')
+    return _wrapped_view
 
 # Create your views here.
 def index(request):
@@ -46,6 +58,11 @@ def deconnexion(request):
     return redirect('connect_user')
 
 
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+
 def connect_user(request):
     if request.method == "GET":
         return render(request, "connect_user.html")
@@ -54,35 +71,37 @@ def connect_user(request):
         username_or_email = request.POST.get('username')
         password = request.POST.get('password')
 
-        try:
-            utilisateur = (
-                User.objects.filter(email=username_or_email).first()
-                or User.objects.get(username=username_or_email)
-            )
+        utilisateur = (
+            User.objects.filter(email=username_or_email).first() or
+            User.objects.filter(username=username_or_email).first()
+        )
 
-            if not utilisateur.is_active:
-                messages.error(request, "Votre compte n'est pas activé.")
-                return render(request, "connect_user.html", {"utilisateur": utilisateur})
-
-            username = utilisateur.username
-
-        except User.DoesNotExist:
-            messages.error(request, "Nous n'avons pas trouvé de compte correspondant à ces identifiants.")
+        if not utilisateur:
+            messages.error(request, "Aucun compte trouvé avec ces identifiants.")
             return render(request, "connect_user.html")
 
-        user = authenticate(request, username=username, password=password)
+        if not utilisateur.is_active:
+            messages.error(request, "Votre compte est désactivé.")
+            return render(request, "connect_user.html")
+
+        user = authenticate(request, username=utilisateur.username, password=password)
 
         if user is not None:
-            
             login(request, user)
-            return redirect('accueil')
+            user_type = getattr(user.profile, 'user_type', 'agent')  # valeur par défaut
 
+            if user_type == "admin":
+                return redirect('accueil')
+            else:
+                return redirect('scan')
         else:
-            messages.error(request, "Mot de passe incorrect !")
+            messages.error(request, "Mot de passe incorrect.")
             return render(request, "connect_user.html")
+
         
 
 @login_required(login_url='connect_user')
+@superadmin_required
 def add_user(request):
     # Empêcher un agent d'accéder à la page
     if hasattr(request.user, 'profile') and request.user.profile.is_agent:
@@ -132,12 +151,15 @@ def add_user(request):
 
 @login_required(login_url='connect_user')
 def accueil(request):
-    fiches = Individual.objects.filter(is_active = True)
-    context = {"fiches": fiches}
-    return render(request, "accueil.html", context = context)
-
+    if request.user.profile.is_admin:
+        fiches = Individual.objects.filter(is_active = True)
+        context = {"fiches": fiches}
+        return render(request, "accueil.html", context = context)
+    else:
+        return render(request, "scan.html")
 
 @login_required(login_url='connect_user')
+@superadmin_required
 def comptes(request):
     users = User.objects.all()
     context = {"users": users}
@@ -145,6 +167,7 @@ def comptes(request):
 
 
 @login_required(login_url='connect_user')
+@superadmin_required
 def update_user(request, user_id):
     user_to_update = get_object_or_404(User, pk=user_id)
 
@@ -189,6 +212,7 @@ def individual_public_view(request, unique_id):
 
 
 @login_required(login_url='connect_user')
+@superadmin_required
 def delete_individual(request, unique_id):
     individual = get_object_or_404(Individual, unique_id=unique_id)
 
@@ -239,6 +263,7 @@ from django.core.mail import EmailMessage
 from django.core.files.base import ContentFile
 
 @login_required(login_url='connect_user')
+@superadmin_required
 def create_individual(request):
     if request.method == 'POST':
         data = request.POST
@@ -437,3 +462,8 @@ def reset_key(request):
             return render(request, 'reset.html', {'error': f"Erreur lors de l’envoi de l’e-mail : {e}"})
 
     return render(request, 'reset.html')
+
+
+@login_required(login_url='connect_user')
+def scanner_qr(request):
+    return render(request, "scan.html")
